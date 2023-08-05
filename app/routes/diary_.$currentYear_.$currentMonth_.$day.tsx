@@ -5,7 +5,7 @@ import type {
 } from '@remix-run/node';
 import { redirect } from '@remix-run/node';
 import { authenticator } from '~/services/auth.server';
-import { useLoaderData, Form } from '@remix-run/react';
+import { useLoaderData, Form, Link } from '@remix-run/react';
 import type { Params } from '@remix-run/react';
 import { upsertEntry, getEntryByDate } from '~/utils/db.server';
 import type { Prisma } from '@prisma/client';
@@ -48,7 +48,8 @@ export const loader: LoaderFunction = async ({
 
   return {
     id: entry ? entry.id : null,
-    day: params.day,
+    year: params.currentYear,
+    month: params.currentMonth,
     painLevel: entry ? entry.painLevel : 0,
     notes: entry ? entry.notes : '',
   };
@@ -59,6 +60,7 @@ export default function Entry() {
 
   return (
     <div>
+      <Link to={`/diary/${data.year}/${data.month}`}>Back to Month View</Link>
       <Form method="post" className="text-black">
         <div>
           <label htmlFor="painLevel">Pain Level</label>
