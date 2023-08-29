@@ -8,7 +8,18 @@ import { Link, useLoaderData } from '@remix-run/react';
 import { authenticator } from '~/services/auth.server';
 import { getEntriesForUserBetweenDates } from '~/utils/db.server';
 import { Entry } from '.prisma/client';
-import { addDays, addMonths, format, getDate, getDay, parse } from 'date-fns';
+import {
+  addDays,
+  addMonths,
+  format,
+  getDate,
+  getDay,
+  isToday,
+  parse,
+} from 'date-fns';
+import classnames from 'classnames';
+import { FaRegStickyNote } from 'react-icons/fa';
+import { VscBlank } from 'react-icons/vsc';
 
 type MonthView = {
   month: string;
@@ -20,7 +31,7 @@ type DisplayEntry = {
   id: string;
   date: string;
   displayDate: string;
-  painLevel: number;
+  painLevel?: number;
   hasNotes: boolean;
 };
 
@@ -32,7 +43,6 @@ export default function Month() {
   const data = useLoaderData();
   const start = parse(data.start, 'yyyy-MM-dd', new Date());
   const prev = addMonths(start, -1);
-  console.log(data.start);
   const next = addMonths(start, 1);
   const startDay = getDate(start);
   let day = startDay - getDay(start);
@@ -49,17 +59,17 @@ export default function Month() {
   }
 
   return (
-    <div className="flex h-full w-full flex-1 flex-col bg-pink-600">
-      <nav>
+    <div className="flex h-full w-full flex-1 flex-col text-black">
+      <nav className="flex w-full justify-between px-1 text-white">
         <Link to={`/diary/${prev.getFullYear()}/${prev.getMonth() + 1}`}>
-          Previous
+          &larr;
         </Link>
-        {format(start, 'MMMM yyyy')}
+        <span>{format(start, 'MMMM yyyy')}</span>
         <Link to={`/diary/${next.getFullYear()}/${next.getMonth() + 1}`}>
-          Next
+          &rarr;
         </Link>
       </nav>
-      <section className="grid flex-1 grid-cols-7 grid-rows-[50px_repeat(6,minmax(0,1fr))] gap-1">
+      <section className="grid flex-1 grid-cols-7 grid-rows-[50px_repeat(6,minmax(0,1fr))] gap-1 text-center">
         <div>Sun</div>
         <div>Mon</div>
         <div>Tue</div>
@@ -77,10 +87,37 @@ export default function Month() {
 
 function Day({ day }: { day: DisplayEntry }) {
   if (!day.date) {
-    return <div className="bg-amber-300"></div>;
+    return <div className=""></div>;
   }
 
   const date = parse(day.date, 'yyyy-MM-dd', new Date());
+
+  const today = isToday(date);
+  const dayClasses = classnames({
+    flex: true,
+    'flex-col': true,
+    'justify-start': true,
+    'items-center': true,
+    'text-center': true,
+  });
+
+  const highlightClasses = classnames({
+    'bg-green-500': day.painLevel === 0,
+    'bg-yellow-500': day.painLevel === 1,
+    'bg-red-500': day.painLevel === 2,
+    'border-black': !today,
+    'border-white': today,
+    border: true,
+    'rounded-full': true,
+    'w-10': true,
+    'h-10': true,
+    'text-center': true,
+    flex: true,
+    'justify-center': true,
+    'items-center': true,
+    'self-center': true,
+    'mb-1': true,
+  });
 
   return (
     <Link
@@ -88,10 +125,12 @@ function Day({ day }: { day: DisplayEntry }) {
         date,
         'dd',
       )}`}
-      className="bg-amber-300"
+      className={dayClasses}
     >
-      <div>{day.displayDate}</div>
-      <div>{day.hasNotes ? 'Has Notes' : 'No Notes'}</div>
+      <div className={highlightClasses}>{day.displayDate}</div>
+      <div className="text-2xl">
+        {day.hasNotes ? <FaRegStickyNote /> : <VscBlank />}
+      </div>
     </Link>
   );
 }
@@ -150,7 +189,7 @@ function buildMonth(entries: Entry[], start: Date, end: Date): MonthView {
         id: format(current, 'yyyy-MM-dd'),
         date: format(current, 'yyyy-MM-dd'),
         displayDate: format(current, 'd'),
-        painLevel: 0,
+        painLevel: undefined,
         hasNotes: false,
       });
     }
